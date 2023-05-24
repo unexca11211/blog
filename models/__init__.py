@@ -1,6 +1,7 @@
 import datetime
 import db
-from sqlalchemy import ( Column, Integer, Text, Boolean, DateTime, ForeignKey )
+import uuid
+from sqlalchemy import ( Column, Uuid, Text, Boolean, TIMESTAMP, ForeignKey )
 from sqlalchemy.orm import relationship
 
 # Usuarios
@@ -8,16 +9,17 @@ from sqlalchemy.orm import relationship
 class User(db.Base):
     __tablename__ = "user"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    id = Column(Uuid, primary_key=True, nullable=False, default=uuid.uuid4)
     username = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
-    admin = Column(Boolean, nullable=False, default=False)
-    creation_date = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    email = Column(Text, nullable=False)
+    is_admin = Column(Boolean, nullable=False, default=False)
 
-    def __init__(self, username:str, password:str, admin:bool = False):
+    def __init__(self, username:str, password:str, email:str, is_admin:bool = False):
         self.username = username
         self.password = password
-        self.admin = admin
+        self.email = email
+        self.is_admin = is_admin
 
     def __repr__(self):
         return f"User({self.username, self.admin})"
@@ -30,13 +32,13 @@ class User(db.Base):
 class Category(db.Base):
     __tablename__ = "category"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    parent_id = Column(Integer, ForeignKey("category.id", ondelete="RESTRICT"), nullable=True)
+    id = Column(Uuid, primary_key=True, nullable=False, default=uuid.uuid4)
+    parent_id = Column(Uuid, ForeignKey("category.id", ondelete="RESTRICT"), nullable=True)
     name = Column(Text, nullable=False)
 
-    def __init__(self, name:str, category_id:int = None):
+    def __init__(self, name:str, parent_id = None):
         self.name = name
-        self.category_id = category_id
+        self.parent_id = parent_id
     
     def __repr__(self):
         return f"Category({self.name[:20]})"
@@ -55,20 +57,20 @@ class Category(db.Base):
 class Entry(db.Base):
     __tablename__ = "entry"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    parent_id = Column(Integer, ForeignKey("entry.id", ondelete="RESTRICT"), nullable=True)
-    category_id = Column(Integer, ForeignKey("category.id", ondelete="RESTRICT"), nullable=True)
-    user_id = Column(Integer, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False)
+    id = Column(Uuid, primary_key=True, nullable=False, default=uuid.uuid4)
+    parent_id = Column(Uuid, ForeignKey("entry.id", ondelete="RESTRICT"), nullable=True)
+    category_id = Column(Uuid, ForeignKey("category.id", ondelete="RESTRICT"), nullable=True)
+    user_id = Column(Uuid, ForeignKey("user.id", ondelete="RESTRICT"), nullable=False)
     title = Column(Text, nullable=False)
     content = Column(Text, nullable=True)
-    creation_date = Column(DateTime, nullable=False, default=datetime.datetime.now)
-    last_modified = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now)
+    updated_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now)
 
-    def __init__(self, user_id:int, title:str, content:str = None, entry_id = None, category_id = None):
+    def __init__(self, user_id, title:str, content:str = None, parent_id = None, category_id = None):
         self.user_id = user_id
         self.title = title
         self.content = content
-        self.entry_id = entry_id
+        self.parent_id = parent_id
         self.category_id = category_id
     
     def __repr__(self):
@@ -82,13 +84,13 @@ class Entry(db.Base):
 class Attachment(db.Base):
     __tablename__ = "attachment"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    entry_id = Column(Integer, ForeignKey("entry.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid, primary_key=True, nullable=False, default=uuid.uuid4)
+    entry_id = Column(Uuid, ForeignKey("entry.id", ondelete="CASCADE"), nullable=False)
     name = Column(Text, nullable=False)
     hash = Column(Text, nullable=False)
-    upload_date = Column(DateTime, nullable=False, default=datetime.datetime.now)
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now)
 
-    def __init__(self, entry_id:int, name:str, hash:str):
+    def __init__(self, entry_id, name:str, hash:str):
         self.entry_id = entry_id
         self.name = name
         self.hash = hash

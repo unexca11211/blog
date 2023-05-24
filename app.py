@@ -3,7 +3,6 @@ import db
 import frontend
 from flask import Flask
 from flask.json.provider import DefaultJSONProvider
-from models import User
 
 db.Base.metadata.create_all(db.engine)
 
